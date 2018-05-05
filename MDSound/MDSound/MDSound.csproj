@@ -46,6 +46,7 @@
     <Compile Include="ay8910.cs" />
     <Compile Include="c140.cs" />
     <Compile Include="c352.cs" />
+    <Compile Include="ym3438.cs" />
     <Compile Include="common.cs" />
     <Compile Include="fmgen\file.cs" />
     <Compile Include="fmgen\fmgen.cs" />
@@ -105,6 +106,7 @@
     <Compile Include="ym2609.cs" />
     <Compile Include="ym2610.cs" />
     <Compile Include="ym2612.cs" />
+    <Compile Include="ym3438_const.cs" />
     <Compile Include="ymf262.cs" />
     <Compile Include="ymf271.cs" />
     <Compile Include="ymf278b.cs" />

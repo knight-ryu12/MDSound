@@ -106,7 +106,8 @@ namespace MDSound
             K053260,
             Y8950,
             RF5C68,
-            YM2151mame
+            YM2151mame,
+            YM3438
         }
 
         public class Chip
