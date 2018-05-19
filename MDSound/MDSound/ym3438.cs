@@ -24,7 +24,8 @@ namespace MDSound
     }
     public class ym3438 : Instrument
     {
-        ushort[] logsinrom = ym3438_const.logsinrom;
+        public override string Name { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        public override string ShortName { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
         private static void OPN2_DoIO(ym3438_ chip) {
             chip.write_a_en = (chip.write_a & 0x03) == 0x01;
@@ -149,7 +150,7 @@ namespace MDSound
                         case 0x21: /* LSI test 1 */
                             for (i = 0; i < 8; i++)
                             {
-                                chip.mode_test_21[i] = (Bit8u)((chip.write_data >> i) & 0x01);
+                                chip.mode_test_21[i] = (((chip.write_data >> i) & 0x01)!=0?true:false);
                             }
                             break;
                         case 0x22: /* LFO control */
@@ -161,7 +162,7 @@ namespace MDSound
                             {
                                 chip.lfo_en = 0;
                             }
-                            chip.lfo_freq = chip.write_data & 0x07;
+                            chip.lfo_freq = (Bit8u)(chip.write_data & 0x07);
                             break;
                         case 0x24: /* Timer A */
                             chip.timer_a_reg &= 0x03;
@@ -209,11 +210,13 @@ namespace MDSound
                         case 0x2c: /* LSI test 2 */
                             for (i = 0; i < 8; i++)
                             {
-                                chip.mode_test_2c[i] = (Bit8u)((chip.write_data >> i) & 0x01);
+                                chip.mode_test_2c[i] = ((chip.write_data >> i) & 0x01)==1?true:false;
                             }
                             chip.dacdata &= 0x1fe;
-                            chip.dacdata |= chip.mode_test_2c[3];
-                            chip.eg_custom_timer = !chip.mode_test_2c[7] && chip.mode_test_2c[6]; //todo
+                            //Bit8u tmp = (Bit8u)(chip.mode_test_2c[3] ? 1 : 0);
+                            chip.dacdata |= (Bit8u)(chip.mode_test_2c[3] ? 1 : 0);
+                            //Bit8u tmp = chip.mode_test_2c[7] ? 0 : 1;
+                            chip.eg_custom_timer = (Bit8u)((chip.mode_test_2c[7] ? 0 : 1) & (chip.mode_test_2c[6]?1:0)); //todo
                             break;
                         default:
                             break;
@@ -221,17 +224,120 @@ namespace MDSound
                 }
                     if (chip.write_a_en)
                     {
-                            chip.write_fm_mode_a = chip.write_data & 0xff;
+                        
+                            chip.write_fm_mode_a = ((chip.write_data & 0xff)==1?true:false);
                     }    
                 }
 
                 if (chip.write_fm_data)
                 {
-                    chip.data = chip.write_data & 0xff;
+                    chip.data = (Bit8u)(chip.write_data & 0xff);
                 }
             }
+
+        public void OPN2_PhaseCalcIncrement(ym3438_ chip) {
+            Bit32u chan = chip.channel;
+            Bit32u slot = chip.cycles;
+            Bit32u fnum = chip.pg_fnum;
+            Bit32u fnum_h = fnum >> 4;
+            Bit32u fm;
+            Bit32u basefreq;
+            Bit8u lfo = chip.lfo_pm;
+            Bit8u lfo_l = (Bit8u)(lfo & 0x0f);
+            Bit8u pms = chip.pms[chan];
+            Bit8u dt = chip.dt[slot];
+            Bit8u dt_l = (Bit8u)(dt & 0x03);
+            Bit8u detune = 0;
+            Bit8u block, note;
+            Bit8u sum, sum_h, sum_l;
+            Bit8u kcode = (Bit8u)(chip.pg_kcode);
+
+            fnum <<= 1;
+            if ((lfo_l & 0x08) != 0) {
+                lfo_l ^= 0x0f;
+            }
+            fm = (fnum_h >> ym3438_const.pg_lfo_sh1[pms,lfo_l]) + (fnum_h >> ym3438_const.pg_lfo_sh2[pms,lfo_l]);
+            if (pms > 5) fm <<= pms - 5;
+            fm >>= 2;
+            if ((lfo & 0x10)!=0)
+            {
+                fnum -= fm;
+            }
+            else
+            {
+                fnum += fm;
+            }
+            fnum &= 0xfff;
+
+            basefreq = (fnum << chip.pg_block) >> 2;
+
+            /* Apply detune */
+            if (dt_l!=0)
+            {
+                if (kcode > 0x1c)
+                {
+                    kcode = 0x1c;
+                }
+                block = kcode >> 2;
+                note = kcode & 0x03;
+                sum = (Bit8u)(block + 9 + ((dt_l == 3) | (dt_l & 0x02)));
+                sum_h = (Bit8u)(sum >> 1);
+                sum_l = (Bit8u)(sum & 0x01);
+                detune = (Bit8u)(ym3438_const.pg_detune[(sum_l << 2) | note] >> (9 - sum_h));
+            }
+            if (dt & 0x04)
+            {
+                basefreq -= detune;
+            }
+            else
+            {
+                basefreq += detune;
+            }
+            basefreq &= 0x1ffff;
+            chip.pg_inc[slot] = (basefreq * chip.multi[slot]) >> 1;
+            chip.pg_inc[slot] &= 0xfffff;
+
+
+        }
+
+        public void OPN2_PhaseGenerate(ym3438_ chip)
+        {
+
+        }
+
+
+
+        public override void Reset(byte ChipID)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override uint Start(byte ChipID, uint clock)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override uint Start(byte ChipID, uint clock, uint ClockValue, params object[] option)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void Stop(byte ChipID)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void Update(byte ChipID, int[][] outputs, int samples)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override int Write(byte ChipID, int port, int adr, int data)
+        {
+            throw new NotImplementedException();
         }
     }
+    
 
     
 
@@ -258,16 +364,16 @@ namespace MDSound
         public bool busy;
         /* LFO */
         public Bit8u lfo_en;
-        Bit8u lfo_freq;
-        Bit8u lfo_pm;
-        Bit8u lfo_am;
-        Bit8u lfo_cnt;
-        Bit8u lfo_inc;
-        Bit8u lfo_quotient;
+        public Bit8u lfo_freq;
+        public Bit8u lfo_pm;
+        public Bit8u lfo_am;
+        public Bit8u lfo_cnt;
+        public Bit8u lfo_inc;
+        public Bit8u lfo_quotient;
         /* Phase generator */
-        Bit16u pg_fnum;
+        public Bit16u pg_fnum;
         Bit8u pg_block;
-        Bit8u pg_kcode;
+        public Bit8u pg_kcode;
         Bit32u[] pg_inc;
         Bit32u[] pg_phase;
         Bit8u[] pg_reset;
@@ -339,8 +445,8 @@ namespace MDSound
         public Bit8u timer_b_overflow;
 
         /* Register set */
-        public Bit8u[] mode_test_21;
-        public Bit8u[] mode_test_2c;
+        public bool[] mode_test_21;
+        public bool[] mode_test_2c;
         public Bit8u mode_ch3;
         public Bit8u mode_kon_channel;
         public Bit8u[] mode_kon_operator;
@@ -377,6 +483,4 @@ namespace MDSound
         public Bit8u[] pms;
 
     }
-
-
 }
