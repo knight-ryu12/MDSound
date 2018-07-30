@@ -16,7 +16,8 @@ using Bit16s = System.Int16;
 
 namespace MDSound
 {
-    enum EG_PARAM : int {
+    enum EG_PARAM : int
+    {
         eg_num_attack = 0,
         eg_num_decay = 1,
         eg_num_sustain = 2,
@@ -24,10 +25,11 @@ namespace MDSound
     }
     public class ym3438 : Instrument
     {
-        public override string Name { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-        public override string ShortName { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        public override string Name { get { return "YM3438"; } set { } }
+        public override string ShortName { get { return "OPN2cmos"; } set { } }
 
-        private static void OPN2_DoIO(ym3438_ chip) {
+        private static void OPN2_DoIO(ym3438_ chip)
+        {
             chip.write_a_en = (chip.write_a & 0x03) == 0x01;
             chip.write_d_en = (chip.write_d & 0x03) == 0x01;
             chip.write_a <<= 1;
@@ -40,34 +42,40 @@ namespace MDSound
             chip.write_busy_cnt &= 0x1f;
         }
 
-        private static void OPN2_DoRegWrite(ym3438_ chip) {
+        private static void OPN2_DoRegWrite(ym3438_ chip)
+        {
             int i;
             Bit32u slot = chip.cycles % 12;
             Bit32u address;
             Bit32u channel = chip.channel;
-            if (chip.write_fm_data) {
-                if (ym3438_const.op_offset[slot] == (chip.address & 0x107)) {
-                    if ((chip.address & 0x08) != 0) {
+            if (chip.write_fm_data)
+            {
+                if (ym3438_const.op_offset[slot] == (chip.address & 0x107))
+                {
+                    if ((chip.address & 0x08) != 0)
+                    {
                         slot += 12; // OP2? OP4?
                     }
-                    address = (Bit32u) chip.address & 0xf0;
+                    address = (Bit32u)chip.address & 0xf0;
                     switch (address)
                     {
                         case 0x30: //DT MULTI
-                            chip.multi[slot] = (Bit8u) (chip.data & 0x0f);
-                            if (chip.multi[slot] == 0) {
+                            chip.multi[slot] = (Bit8u)(chip.data & 0x0f);
+                            if (chip.multi[slot] == 0)
+                            {
                                 chip.multi[slot] = 1;
                             }
-                            else {
+                            else
+                            {
                                 chip.multi[slot] <<= 1;
                             }
-                            chip.dt[slot] = (Bit8u) ((chip.data >> 4) & 0x07);
+                            chip.dt[slot] = (Bit8u)((chip.data >> 4) & 0x07);
                             break;
                         case 0x40: //TL
                             chip.tl[slot] = (Bit8u)(chip.data & 0x7f);
                             break;
                         case 0x50: // KS AR
-                            chip.ar[slot] = (Bit8u) (chip.data & 0x1f);
+                            chip.ar[slot] = (Bit8u)(chip.data & 0x1f);
                             chip.ks[slot] = (Bit8u)((chip.data >> 7) & 0x03);
                             break;
                         case 0x60: // AM DR
@@ -90,7 +98,8 @@ namespace MDSound
                     }
                 }
 
-                if (ym3438_const.ch_offset[channel] == (chip.address & 0x103)) {
+                if (ym3438_const.ch_offset[channel] == (chip.address & 0x103))
+                {
                     address = (Bit32u)(chip.address & 0xfc);
                     switch (address)
                     {
@@ -125,32 +134,37 @@ namespace MDSound
                     }
                 }
             }
-            if (chip.write_a_en || chip.write_d_en) {
-                if (chip.write_a_en) { // True?
+            if (chip.write_a_en || chip.write_d_en)
+            {
+                if (chip.write_a_en)
+                { // True?
                     chip.write_fm_data = false;
                 }
-                if(chip.write_fm_address && chip.write_d_en)
+                if (chip.write_fm_address && chip.write_d_en)
                 {
                     chip.write_fm_data = true;
                 }
 
-                if (chip.write_a_en) {
-                    if ((chip.write_data & 0xf0) != 0x00) {
+                if (chip.write_a_en)
+                {
+                    if ((chip.write_data & 0xf0) != 0x00)
+                    {
                         chip.address = chip.write_data;
                         chip.write_fm_address = true;
-                    } else
+                    }
+                    else
                     {
                         chip.write_fm_address = false;
-                    }    
+                    }
                 }
-                if(chip.write_d_en && (chip.write_data & 0x100) == 0)
+                if (chip.write_d_en && (chip.write_data & 0x100) == 0)
                 {
                     switch (chip.address)
                     {
                         case 0x21: /* LSI test 1 */
                             for (i = 0; i < 8; i++)
                             {
-                                chip.mode_test_21[i] = (((chip.write_data >> i) & 0x01)!=0?true:false);
+                                chip.mode_test_21[i] = (((chip.write_data >> i) & 0x01) != 0 ? true : false);
                             }
                             break;
                         case 0x22: /* LFO control */
@@ -178,7 +192,7 @@ namespace MDSound
                         case 0x27: /* CSM, Timer control */
                             chip.mode_ch3 = (Bit8u)((chip.write_data & 0xc0) >> 6);
                             chip.mode_csm = chip.mode_ch3 == 2;
-                            chip.timer_a_load = (Bit8u) (chip.write_data & 0x01);
+                            chip.timer_a_load = (Bit8u)(chip.write_data & 0x01);
                             chip.timer_a_enable = (Bit8u)((chip.write_data >> 2) & 0x01);
                             chip.timer_a_reset = (Bit8u)((chip.write_data >> 4) & 0x01);
                             chip.timer_b_load = (Bit8u)((chip.write_data >> 1) & 0x01);
@@ -210,32 +224,33 @@ namespace MDSound
                         case 0x2c: /* LSI test 2 */
                             for (i = 0; i < 8; i++)
                             {
-                                chip.mode_test_2c[i] = ((chip.write_data >> i) & 0x01)==1?true:false;
+                                chip.mode_test_2c[i] = ((chip.write_data >> i) & 0x01) == 1 ? true : false;
                             }
                             chip.dacdata &= 0x1fe;
                             //Bit8u tmp = (Bit8u)(chip.mode_test_2c[3] ? 1 : 0);
                             chip.dacdata |= (Bit8u)(chip.mode_test_2c[3] ? 1 : 0);
                             //Bit8u tmp = chip.mode_test_2c[7] ? 0 : 1;
-                            chip.eg_custom_timer = (Bit8u)((chip.mode_test_2c[7] ? 0 : 1) & (chip.mode_test_2c[6]?1:0)); //todo
+                            chip.eg_custom_timer = (Bit8u)((chip.mode_test_2c[7] ? 0 : 1) & (chip.mode_test_2c[6] ? 1 : 0)); //todo
                             break;
                         default:
                             break;
                     }
                 }
-                    if (chip.write_a_en)
-                    {
-                        
-                            chip.write_fm_mode_a = ((chip.write_data & 0xff)==1?true:false);
-                    }    
-                }
-
-                if (chip.write_fm_data)
+                if (chip.write_a_en)
                 {
-                    chip.data = (Bit8u)(chip.write_data & 0xff);
+
+                    chip.write_fm_mode_a = ((chip.write_data & 0xff) == 1 ? true : false);
                 }
             }
 
-        public void OPN2_PhaseCalcIncrement(ym3438_ chip) {
+            if (chip.write_fm_data)
+            {
+                chip.data = (Bit8u)(chip.write_data & 0xff);
+            }
+        }
+
+        public void OPN2_PhaseCalcIncrement(ym3438_ chip)
+        {
             Bit32u chan = chip.channel;
             Bit32u slot = chip.cycles;
             Bit32u fnum = chip.pg_fnum;
@@ -253,13 +268,14 @@ namespace MDSound
             Bit8u kcode = (Bit8u)(chip.pg_kcode);
 
             fnum <<= 1;
-            if ((lfo_l & 0x08) != 0) {
+            if ((lfo_l & 0x08) != 0)
+            {
                 lfo_l ^= 0x0f;
             }
-            fm = (fnum_h >> ym3438_const.pg_lfo_sh1[pms,lfo_l]) + (fnum_h >> ym3438_const.pg_lfo_sh2[pms,lfo_l]);
+            fm = (fnum_h >> ym3438_const.pg_lfo_sh1[pms, lfo_l]) + (fnum_h >> ym3438_const.pg_lfo_sh2[pms, lfo_l]);
             if (pms > 5) fm <<= pms - 5;
             fm >>= 2;
-            if ((lfo & 0x10)!=0)
+            if ((lfo & 0x10) != 0)
             {
                 fnum -= fm;
             }
@@ -272,20 +288,20 @@ namespace MDSound
             basefreq = (fnum << chip.pg_block) >> 2;
 
             /* Apply detune */
-            if (dt_l!=0)
+            if (dt_l != 0)
             {
                 if (kcode > 0x1c)
                 {
                     kcode = 0x1c;
                 }
-                block = kcode >> 2;
-                note = kcode & 0x03;
-                sum = (Bit8u)(block + 9 + ((dt_l == 3) | (dt_l & 0x02)));
+                block = (Bit8u)(kcode >> 2);
+                note = (Bit8u)(kcode & 0x03);
+                sum = (Bit8u)(block + 9 + (((dt_l == 3) ? 1 : 0) | (dt_l & 0x02)));
                 sum_h = (Bit8u)(sum >> 1);
                 sum_l = (Bit8u)(sum & 0x01);
                 detune = (Bit8u)(ym3438_const.pg_detune[(sum_l << 2) | note] >> (9 - sum_h));
             }
-            if (dt & 0x04)
+            if ((dt & 0x04) != 0)
             {
                 basefreq -= detune;
             }
@@ -299,53 +315,380 @@ namespace MDSound
 
 
         }
+    
 
         public void OPN2_PhaseGenerate(ym3438_ chip)
         {
+            Bit32u slot;
+            /* Mask increment */
+            slot = (chip.cycles + 20) % 24;
+            if (chip.pg_reset[slot] != 0)
+            {
+                chip.pg_inc[slot] = 0;
+            }
+            /* Phase step */
+            slot = (chip.cycles + 19) % 24;
+            chip.pg_phase[slot] += chip.pg_inc[slot];
+            chip.pg_phase[slot] &= 0xfffff;
+            if (chip.pg_reset[slot] != 0 || chip.mode_test_21[3])
+            {
+                chip.pg_phase[slot] = 0;
+            }
+        }
 
+
+        void OPN2_EnvelopeADSR(ym3438_ chip)
+        {
+            Bit32u slot = (chip.cycles + 22) % 24;
+
+            Bit8u nkon = chip.eg_kon_latch[slot];
+            Bit8u okon = chip.eg_kon[slot];
+            Bit8u kon_event;
+            Bit8u koff_event;
+            Bit8u eg_off;
+            Bit16s level;
+            Bit16s nextlevel = 0;
+            Bit16s ssg_level;
+            Bit8u nextstate = chip.eg_state[slot];
+            Bit16s inc = 0;
+            chip.eg_read[0] = chip.eg_read_inc;
+            chip.eg_read_inc = chip.eg_inc > 0;
+
+            /* Reset phase generator */
+            chip.pg_reset[slot] = (nkon && !okon) || chip.eg_ssg_pgrst_latch[slot];
+
+            /* KeyOn/Off */
+            kon_event = (nkon && !okon) || (okon && chip.eg_ssg_repeat_latch[slot]);
+            koff_event = okon && !nkon;
+
+            ssg_level = level = (Bit16s)chip.eg_level[slot];
+
+            if (chip.eg_ssg_inv[slot] != 0)
+            {
+                /* Inverse */
+                ssg_level = 512 - level;
+                ssg_level &= 0x3ff;
+            }
+            if (koff_event != 0)
+            {
+                level = ssg_level;
+            }
+            if (chip.eg_ssg_enable[slot] != 0)
+            {
+                eg_off = level >> 9;
+            }
+            else
+            {
+                eg_off = (level & 0x3f0) == 0x3f0;
+            }
+            nextlevel = level;
+            if (kon_event != 0)
+            {
+                nextstate = EG_PARAM.eg_num_attack;
+                /* Instant attack */
+                if (chip.eg_ratemax)
+                {
+                    nextlevel = 0;
+                }
+                else if (chip.eg_state[slot] == EG_PARAM.eg_num_attack && level != 0 && chip.eg_inc && nkon)
+                {
+                    inc = (~level << chip.eg_inc) >> 5;
+                }
+            }
+            else
+            {
+                switch (chip.eg_state[slot])
+                {
+                    case EG_PARAM.eg_num_attack:
+                        if (level == 0)
+                        {
+                            nextstate = eg_num_decay;
+                        }
+                        else if (chip.eg_inc && !chip.eg_ratemax && nkon)
+                        {
+                            inc = (~level << chip.eg_inc) >> 5;
+                        }
+                        break;
+                    case EG_PARAM.eg_num_decay:
+                        if ((level >> 5) == chip.eg_sl[1])
+                        {
+                            nextstate = eg_num_sustain;
+                        }
+                        else if (!eg_off && chip.eg_inc)
+                        {
+                            inc = 1 << (chip.eg_inc - 1);
+                            if (chip.eg_ssg_enable[slot])
+                            {
+                                inc <<= 2;
+                            }
+                        }
+                        break;
+                    case EG_PARAM.eg_num_sustain:
+                    case EG_PARAM.eg_num_release:
+                        if (!eg_off && chip.eg_inc)
+                        {
+                            inc = 1 << (chip.eg_inc - 1);
+                            if (chip.eg_ssg_enable[slot])
+                            {
+                                inc <<= 2;
+                            }
+                        }
+                        break;
+                    default:
+                        break;
+                }
+                if (!nkon)
+                {
+                    nextstate = eg_num_release;
+                }
+            }
+            if (chip.eg_kon_csm[slot])
+            {
+                nextlevel |= chip.eg_tl[1] << 3;
+            }
+
+            /* Envelope off */
+            if (!kon_event && !chip.eg_ssg_hold_up_latch[slot] && chip.eg_state[slot] != eg_num_attack && eg_off)
+            {
+                nextstate = eg_num_release;
+                nextlevel = 0x3ff;
+            }
+
+            nextlevel += inc;
+
+            chip.eg_kon[slot] = chip.eg_kon_latch[slot];
+            chip.eg_level[slot] = (Bit16u)nextlevel & 0x3ff;
+            chip.eg_state[slot] = nextstate;
+        }
+
+        void OPN2_Reset(ym3438_ chip)
+        {
+            Bit32u i;
+            chip = new ym3438_();
+            for (i = 0; i < 24; i++)
+            {
+                chip.eg_out[i] = 0x3ff;
+                chip.eg_level[i] = 0x3ff;
+                chip.eg_state[i] = (Bit8u) EG_PARAM.eg_num_release;
+                chip.multi[i] = 1;
+            }
+            for (i = 0; i < 6; i++)
+            {
+                chip.pan_l[i] = 1;
+                chip.pan_r[i] = 1;
+            }
+        }
+
+        void OPN2_Clock(ym3438_ chip, Bit32u[] buffer)
+        {
+            Bit32u slot = chip.cycles;
+            chip.lfo_inc = (Bit8)(chip.mode_test_21[1] ? 1 : 0);
+            chip.pg_read >>= 1;
+            chip.eg_read[1] >>= 1;
+            chip.eg_cycle++;
+            /* Lock envelope generator timer value */
+            if (chip.cycles == 1 && chip.eg_quotient == 2)
+            {
+                if (chip.eg_cycle_stop != 0)
+                {
+                    chip.eg_shift_lock = 0;
+                }
+                else
+                {
+                    chip.eg_shift_lock = (Bit8u)(chip.eg_shift + 1);
+                }
+                chip.eg_timer_low_lock = (Bit8u)(chip.eg_timer & 0x03);
+            }
+            /* Cycle specific functions */
+            switch (chip.cycles)
+            {
+                case 0:
+                    chip.lfo_pm = (Bit8u)(chip.lfo_cnt >> 2);
+                    if ((chip.lfo_cnt & 0x40) != 0)
+                    {
+                        chip.lfo_am = (Bit8u)(chip.lfo_cnt & 0x3f);
+                    }
+                    else
+                    {
+                        chip.lfo_am = (Bit8u)(chip.lfo_cnt ^ 0x3f);
+                    }
+                    chip.lfo_am <<= 1;
+                    break;
+                case 1:
+                    chip.eg_quotient++;
+                    chip.eg_quotient %= 3;
+                    chip.eg_cycle = 0;
+                    chip.eg_cycle_stop = 1;
+                    chip.eg_shift = 0;
+                    chip.eg_timer_inc |= (Bit8u)(chip.eg_quotient >> 1);
+                    chip.eg_timer = (Bit16u)(chip.eg_timer + chip.eg_timer_inc);
+                    chip.eg_timer_inc = (Bit8u)(chip.eg_timer >> 12);
+                    chip.eg_timer &= 0xfff;
+                    break;
+                case 2:
+                    chip.pg_read = chip.pg_phase[21] & 0x3ff;
+                    chip.eg_read[1] = chip.eg_out[0];
+                    break;
+                case 13:
+                    chip.eg_cycle = 0;
+                    chip.eg_cycle_stop = 1;
+                    chip.eg_shift = 0;
+                    chip.eg_timer = (Bit16u)(chip.eg_timer + chip.eg_timer_inc);
+                    chip.eg_timer_inc = (Bit8u)(chip.eg_timer >> 12);
+                    chip.eg_timer &= 0xfff;
+                    break;
+                case 23:
+                    chip.lfo_inc |= 1;
+                    break;
+            }
+            chip.eg_timer &= (Bit16u)(~((chip.mode_test_21[5] ? 1 : 0) << chip.eg_cycle));
+            if ((((chip.eg_timer >> chip.eg_cycle) | (chip.pin_test_in & chip.eg_custom_timer)) & chip.eg_cycle_stop) != 0)
+            {
+                chip.eg_shift = chip.eg_cycle;
+                chip.eg_cycle_stop = 0;
+            }
+
+            OPN2_DoIO(chip);
+
+            OPN2_DoTimerA(chip);
+            OPN2_DoTimerB(chip);
+            OPN2_KeyOn(chip);
+
+            OPN2_ChOutput(chip);
+            OPN2_ChGenerate(chip);
+
+            OPN2_FMPrepare(chip);
+            OPN2_FMGenerate(chip);
+
+            OPN2_PhaseGenerate(chip);
+            OPN2_PhaseCalcIncrement(chip);
+
+            OPN2_EnvelopeADSR(chip);
+            OPN2_EnvelopeGenerate(chip);
+            OPN2_EnvelopeSSGEG(chip);
+            OPN2_EnvelopePrepare(chip);
+
+            /* Prepare fnum & block */
+            if (chip.mode_ch3 != 0)
+            {
+                /* Channel 3 special mode */
+                switch (slot)
+                {
+                    case 1: /* OP1 */
+                        chip.pg_fnum = chip.fnum_3ch[1];
+                        chip.pg_block = chip.block_3ch[1];
+                        chip.pg_kcode = chip.kcode_3ch[1];
+                        break;
+                    case 7: /* OP3 */
+                        chip.pg_fnum = chip.fnum_3ch[0];
+                        chip.pg_block = chip.block_3ch[0];
+                        chip.pg_kcode = chip.kcode_3ch[0];
+                        break;
+                    case 13: /* OP2 */
+                        chip.pg_fnum = chip.fnum_3ch[2];
+                        chip.pg_block = chip.block_3ch[2];
+                        chip.pg_kcode = chip.kcode_3ch[2];
+                        break;
+                    case 19: /* OP4 */
+                    default:
+                        chip.pg_fnum = chip.fnum[(chip.channel + 1) % 6];
+                        chip.pg_block = chip.block[(chip.channel + 1) % 6];
+                        chip.pg_kcode = chip.kcode[(chip.channel + 1) % 6];
+                        break;
+                }
+            }
+            else
+            {
+                chip.pg_fnum = chip.fnum[(chip.channel + 1) % 6];
+                chip.pg_block = chip.block[(chip.channel + 1) % 6];
+                chip.pg_kcode = chip.kcode[(chip.channel + 1) % 6];
+            }
+
+            OPN2_UpdateLFO(chip);
+            OPN2_DoRegWrite(chip);
+            chip.cycles = (chip.cycles + 1) % 24;
+            chip.channel = chip.cycles % 6;
+
+            buffer[0] = (Bit16u)chip.mol;
+            buffer[1] = (Bit16u)chip.mor;
+        }
+
+        void OPN2_Write(ym3438_ chip, Bit32u port, Bit8u data)
+        {
+            port &= 3;
+            chip.write_data = (Bit16u)(((port << 7) & 0x100) | data);
+            if ((port & 1) != 0)
+            {
+                /* Data */
+                chip.write_d |= 1;
+            }
+            else
+            {
+                /* Address */
+                chip.write_a |= 1;
+            }
         }
 
 
 
+        private ym3438_[] ym3438_ = new ym3438_[2] { new ym3438_(), new ym3438_() };
+        private uint clock = 0;
+        private uint clockValue = 0;
+        private object[] option;
+        private Bit32u[] buf = new Bit32u[2];
+
         public override void Reset(byte ChipID)
         {
-            throw new NotImplementedException();
+            OPN2_Reset(ym3438_[ChipID]);
         }
 
         public override uint Start(byte ChipID, uint clock)
         {
-            throw new NotImplementedException();
+            OPN2_Reset(ym3438_[ChipID]);
+            this.clock = clock;
+            return 0;
         }
 
-        public override uint Start(byte ChipID, uint clock, uint ClockValue, params object[] option)
+        public override uint Start(byte ChipID, uint clock, uint clockValue, params object[] option)
         {
-            throw new NotImplementedException();
+            OPN2_Reset(ym3438_[ChipID]);
+            this.clock = clock;
+            this.clockValue = clockValue;
+            this.option = option;
+            return 0;
         }
 
         public override void Stop(byte ChipID)
         {
-            throw new NotImplementedException();
+            OPN2_Reset(ym3438_[ChipID]);
         }
 
         public override void Update(byte ChipID, int[][] outputs, int samples)
         {
-            throw new NotImplementedException();
+            for (int i = 0; i < samples; i++)
+            {
+                OPN2_Clock(ym3438_[ChipID], buf);
+                outputs[0][i] = (Bit32)buf[0];
+                outputs[1][i] = (Bit32)buf[1];
+            }
         }
 
         public override int Write(byte ChipID, int port, int adr, int data)
         {
-            throw new NotImplementedException();
+            OPN2_Write(ym3438_[ChipID], (Bit16u)(port << 1), (Bit8u)adr);
+            OPN2_Write(ym3438_[ChipID], (Bit16u)((port << 1) + 1), (Bit8u)data);
+            return 0;
         }
     }
-    
 
-    
+
+
 
     public class ym3438_
     {
         public Bit32u cycles;
         public Bit32u channel;
-        Bit16s mol, mor;
+        public Bit16s mol, mor;
         /* IO */
         public Bit16u write_data;
         public Bit8u write_a;
@@ -359,8 +702,8 @@ namespace MDSound
         public bool write_fm_mode_a;
         public Bit16u address;
         public Bit8u data;
-        Bit8u pin_test_in;
-        Bit8u pin_irq;
+        public Bit8u pin_test_in;
+        public Bit8u pin_irq;
         public bool busy;
         /* LFO */
         public Bit8u lfo_en;
@@ -372,56 +715,56 @@ namespace MDSound
         public Bit8u lfo_quotient;
         /* Phase generator */
         public Bit16u pg_fnum;
-        Bit8u pg_block;
+        public Bit8u pg_block;
         public Bit8u pg_kcode;
-        Bit32u[] pg_inc;
-        Bit32u[] pg_phase;
-        Bit8u[] pg_reset;
-        Bit32u pg_read;
+        public Bit32u[] pg_inc;
+        public Bit32u[] pg_phase;
+        public Bit8u[] pg_reset;
+        public Bit32u pg_read;
         /* Envelope generator */
-        Bit8u eg_cycle;
-        Bit8u eg_cycle_stop;
-        Bit8u eg_shift;
-        Bit8u eg_shift_lock;
-        Bit8u eg_timer_low_lock;
-        Bit16u eg_timer;
-        Bit8u eg_timer_inc;
-        Bit16u eg_quotient;
+        public Bit8u eg_cycle;
+        public Bit8u eg_cycle_stop;
+        public Bit8u eg_shift;
+        public Bit8u eg_shift_lock;
+        public Bit8u eg_timer_low_lock;
+        public Bit16u eg_timer;
+        public Bit8u eg_timer_inc;
+        public Bit16u eg_quotient;
         public Bit8u eg_custom_timer;
-        Bit8u eg_rate;
-        Bit8u eg_ksv;
-        Bit8u eg_inc;
-        Bit8u eg_ratemax;
-        Bit8u[] eg_sl;
-        Bit8u eg_lfo_am;
-        Bit8u[] eg_tl;
-        Bit8u[] eg_state;
-        Bit16u[] eg_level;
-        Bit16u[] eg_out;
-        Bit8u[] eg_kon;
-        Bit8u[] eg_kon_csm;
-        Bit8u[] eg_kon_latch;
-        Bit8u[] eg_csm_mode;
-        Bit8u[] eg_ssg_enable;
-        Bit8u[] eg_ssg_pgrst_latch;
-        Bit8u[] eg_ssg_repeat_latch;
-        Bit8u[] eg_ssg_hold_up_latch;
-        Bit8u[] eg_ssg_dir;
-        Bit8u[] eg_ssg_inv;
-        Bit32u[] eg_read;
-        Bit8u eg_read_inc;
+        public Bit8u eg_rate;
+        public Bit8u eg_ksv;
+        public Bit8u eg_inc;
+        public Bit8u eg_ratemax;
+        public Bit8u[] eg_sl;
+        public Bit8u eg_lfo_am;
+        public Bit8u[] eg_tl;
+        public Bit8u[] eg_state;
+        public Bit16u[] eg_level;
+        public Bit16u[] eg_out;
+        public Bit8u[] eg_kon;
+        public Bit8u[] eg_kon_csm;
+        public Bit8u[] eg_kon_latch;
+        public Bit8u[] eg_csm_mode;
+        public Bit8u[] eg_ssg_enable;
+        public Bit8u[] eg_ssg_pgrst_latch;
+        public Bit8u[] eg_ssg_repeat_latch;
+        public Bit8u[] eg_ssg_hold_up_latch;
+        public Bit8u[] eg_ssg_dir;
+        public Bit8u[] eg_ssg_inv;
+        public Bit32u[] eg_read;
+        public Bit8u eg_read_inc;
         /* FM */
-        Bit16s[,] fm_op1;
-        Bit16s[] fm_op2;
-        Bit16s[] fm_out;
-        Bit16u[] fm_mod;
+        public Bit16s[,] fm_op1;
+        public Bit16s[] fm_op2;
+        public Bit16s[] fm_out;
+        public Bit16u[] fm_mod;
         /* Channel */
-        Bit16s[] ch_acc;
-        Bit16s[] ch_out;
-        Bit16s ch_lock;
-        Bit8u ch_lock_l;
-        Bit8u ch_lock_r;
-        Bit16s ch_read;
+        public Bit16s[] ch_acc;
+        public Bit16s[] ch_out;
+        public Bit16s ch_lock;
+        public Bit8u ch_lock_l;
+        public Bit8u ch_lock_r;
+        public Bit16s ch_read;
         /* Timer */
         public Bit16u timer_a_cnt;
         public Bit16u timer_a_reg;
